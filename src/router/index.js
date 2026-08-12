@@ -22,6 +22,11 @@ const router = createRouter({
       name: 'chat',
       component: () => import('../views/ChatView.vue'),
     },
+    {
+      path: '/gerar-3d',
+      name: 'gerar-3d',
+      component: () => import('../views/Tripo3DView.vue'),
+    },
   ],
 })
 

@@ -7,6 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <RouterLink to="/">Home</RouterLink>
     <RouterLink to="/about">About</RouterLink>
     <RouterLink to="/chat">Chat IA</RouterLink>
+    <RouterLink to="/gerar-3d">Gerar 3D</RouterLink>
   </nav>
 
   <RouterView />
@@ -17,7 +18,6 @@ nav {
   padding: 1rem;
   text-align: center;
 }
-
 nav a {
   margin: 0 1rem;
 }
