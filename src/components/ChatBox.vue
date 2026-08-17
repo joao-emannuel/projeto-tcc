@@ -1,16 +1,5 @@
 <template>
-  <div class="chat-box">
-    <div class="messages">
-      <div v-for="(msg, i) in history" :key="i" :class="msg.role">
-        <strong>{{ msg.role === 'user' ? 'Você' : 'IA' }}:</strong> {{ msg.content }}
-      </div>
-    </div>
-
-    <div class="input-area">
-      <input v-model="input" @keyup.enter="send" placeholder="Digite sua mensagem..." />
-      <button @click="send" :disabled="loading">Enviar</button>
-    </div>
-  </div>
+  <h1>PAGINA NÃO DISPONIVEL NO MOMENTO</h1>
 </template>
 
 <script setup>

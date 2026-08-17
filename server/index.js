@@ -120,6 +120,50 @@ app.get('/api/task/:id', async (req, res) => {
   }
 });
 
+app.post('/api/generate-image', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+
+    const response = await fetch('https://api.meshy.ai/openapi/v1/text-to-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.MESHY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        ai_model: 'nano-banana-pro',
+        prompt,
+        aspect_ratio: '1:1',
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Resposta da Meshy (text-to-image):', JSON.stringify(data, null, 2));
+    res.json({ task_id: data.result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao criar tarefa de geração de imagem' });
+  }
+});
+
+app.get('/api/task-text-image/:id', async (req, res) => {
+  try {
+    const response = await fetch(`https://api.meshy.ai/openapi/v1/text-to-image/${req.params.id}`, {
+      headers: { Authorization: `Bearer ${process.env.MESHY_API_KEY}` },
+    });
+    const data = await response.json();
+
+    res.json({
+      status: normalizeStatus(data.status),
+      progress: data.progress,
+      output: { image_url: data.image_urls?.[0] || null },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao consultar tarefa de geração de imagem' });
+  }
+});
+
 app.post('/api/generate-3d-image', async (req, res) => {
   try {
     const { image_base64 } = req.body;
@@ -132,7 +176,7 @@ app.post('/api/generate-3d-image', async (req, res) => {
         Authorization: `Bearer ${process.env.MESHY_API_KEY}`,
       },
       body: JSON.stringify({
-        image_url: image_base64, // aceita data URI base64 direto
+        image_url: image_base64, // aceita data URI base64 ou uma URL direto
         enable_pbr: true,
         should_texture: true,
       }),
@@ -162,6 +206,35 @@ app.get('/api/task-image/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro ao consultar tarefa de imagem' });
+  }
+});
+
+app.get('/api/proxy-model', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).json({ error: 'URL não informada' });
+
+    let response;
+    for (let tentativa = 1; tentativa <= 4; tentativa++) {
+      response = await fetch(url);
+      if (response.ok) break;
+
+      console.warn(`Tentativa ${tentativa} falhou (status ${response.status}), tentando de novo em 2s...`);
+      if (tentativa < 4) await new Promise((r) => setTimeout(r, 2000));
+    }
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Falha ao buscar modelo após várias tentativas:', response.status, text);
+      return res.status(response.status).json({ error: 'Falha ao buscar modelo' });
+    }
+
+    res.set('Content-Type', response.headers.get('content-type') || 'model/gltf-binary');
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.send(buffer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao carregar modelo' });
   }
 });
 

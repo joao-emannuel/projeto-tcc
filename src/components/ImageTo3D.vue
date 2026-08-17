@@ -9,20 +9,24 @@
     <p v-if="loading">Gerando... {{ progress }}%</p>
 
     <div v-if="modelUrl">
-      <p>Modelo pronto!</p>
+      <ModelViewer :src="proxiedModelUrl" />
       <a :href="modelUrl" target="_blank">Baixar arquivo .glb</a>
-    </div>
+  </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { generate3DFromImage, checkImageTask } from '@/services/meshy';
+import ModelViewer from './ModelViewer.vue';
 
 const preview = ref(null);
 const loading = ref(false);
 const progress = ref(0);
 const modelUrl = ref(null);
+const proxiedModelUrl = computed(() =>
+  modelUrl.value ? `http://localhost:3001/api/proxy-model?url=${encodeURIComponent(modelUrl.value)}` : null
+);
 
 function onFileChange(event) {
   const file = event.target.files[0];

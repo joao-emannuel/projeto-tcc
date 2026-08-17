@@ -1,48 +1,90 @@
 <template>
   <div>
-    <input v-model="prompt" placeholder="Descreva o modelo 3D..." />
-    <button @click="generate" :disabled="loading">Gerar Modelo 3D</button>
+    <input v-model="prompt" placeholder="Descreva a imagem que você quer gerar..." />
+    <button @click="generateImage" :disabled="loadingImage">Gerar Imagem</button>
+    <p v-if="loadingImage">Gerando imagem... {{ imageProgress }}%</p>
 
-    <p v-if="loading">Gerando... {{ progress }}%</p>
+    <div v-if="imageUrl">
+      <img :src="imageUrl" alt="Imagem gerada" style="max-width: 300px; border-radius: 12px;" />
 
-    <div v-if="modelUrl">
-      <p>Modelo pronto!</p>
-      <a :href="modelUrl" target="_blank">Baixar arquivo .glb</a>
+      <br><br>
+      <button @click="generateModel" :disabled="loadingModel">Gerar Modelo 3D a partir da imagem</button>
+      <p v-if="loadingModel">Gerando modelo 3D... {{ modelProgress }}%</p>
+
+      <div v-if="modelUrl">
+        <ModelViewer :src="proxiedModelUrl" />
+        <a :href="modelUrl" target="_blank">Baixar arquivo .glb</a>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { generate3D, checkTask } from '@/services/meshy';
+import { ref, computed } from 'vue';
+import { generateImage as gerarImagemApi, checkTextImageTask, generate3DFromImage, checkImageTask } from '@/services/meshy';
+import ModelViewer from './ModelViewer.vue';
 
 const prompt = ref('');
-const loading = ref(false);
-const progress = ref(0);
+const loadingImage = ref(false);
+const imageProgress = ref(0);
+const imageUrl = ref(null);
+
+const loadingModel = ref(false);
+const modelProgress = ref(0);
 const modelUrl = ref(null);
 
-async function generate() {
+const proxiedModelUrl = computed(() =>
+  modelUrl.value ? `http://localhost:3001/api/proxy-model?url=${encodeURIComponent(modelUrl.value)}` : null
+);
+
+async function generateImage() {
   if (!prompt.value.trim()) return;
 
-  loading.value = true;
+  loadingImage.value = true;
+  imageUrl.value = null;
   modelUrl.value = null;
 
-  const taskId = await generate3D(prompt.value);
-  poll(taskId);
+  const taskId = await gerarImagemApi(prompt.value);
+  pollImage(taskId);
 }
 
-async function poll(taskId) {
-  const task = await checkTask(taskId);
-  progress.value = task.progress || 0;
+async function pollImage(taskId) {
+  const task = await checkTextImageTask(taskId);
+  imageProgress.value = task.progress || 0;
+
+  if (task.status === 'success') {
+    imageUrl.value = task.output.image_url;
+    loadingImage.value = false;
+  } else if (['failed', 'cancelled', 'banned'].includes(task.status)) {
+    loadingImage.value = false;
+    alert('Falha ao gerar a imagem.');
+  } else {
+    setTimeout(() => pollImage(taskId), 2000);
+  }
+}
+
+async function generateModel() {
+  if (!imageUrl.value) return;
+
+  loadingModel.value = true;
+  modelUrl.value = null;
+
+  const taskId = await generate3DFromImage(imageUrl.value);
+  pollModel(taskId);
+}
+
+async function pollModel(taskId) {
+  const task = await checkImageTask(taskId);
+  modelProgress.value = task.progress || 0;
 
   if (task.status === 'success') {
     modelUrl.value = task.output.model_url;
-    loading.value = false;
+    loadingModel.value = false;
   } else if (['failed', 'cancelled', 'banned'].includes(task.status)) {
-    loading.value = false;
+    loadingModel.value = false;
     alert('Falha ao gerar o modelo.');
   } else {
-    setTimeout(() => poll(taskId), 2000); // consulta de novo em 2s
+    setTimeout(() => pollModel(taskId), 2000);
   }
 }
 </script>

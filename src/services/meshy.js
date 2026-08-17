@@ -27,3 +27,18 @@ export async function checkImageTask(taskId) {
   const res = await fetch(`http://localhost:3001/api/task-image/${taskId}`);
   return res.json();
 }
+
+export async function generateImage(prompt) {
+  const res = await fetch('http://localhost:3001/api/generate-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+  const data = await res.json();
+  return data.task_id;
+}
+
+export async function checkTextImageTask(taskId) {
+  const res = await fetch(`http://localhost:3001/api/task-text-image/${taskId}`);
+  return res.json();
+}

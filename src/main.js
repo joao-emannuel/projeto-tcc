@@ -1,3 +1,4 @@
+import '@google/model-viewer'
 import './assets/main.css'
 
 import { createApp } from 'vue'
