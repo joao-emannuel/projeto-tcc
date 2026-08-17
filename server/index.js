@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { GoogleGenAI } from '@google/genai';
 import 'dotenv/config';
+import bcrypt from 'bcrypt';
+import { pool } from './db.js';
 
 const app = express();                    // ← isso precisa vir ANTES
 app.use(cors());
@@ -24,6 +26,60 @@ app.post('/api/chat', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro ao chamar a API do Gemini' });
+  }
+});
+
+app.post('/api/register', async (req, res) => {
+  try {
+    const { login, senha } = req.body;
+    if (!login || !senha) {
+      return res.status(400).json({ error: 'Login e senha são obrigatórios' });
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 10);
+
+    await pool.query(
+      'INSERT INTO usuarios (login, senha_hash) VALUES ($1, $2)',
+      [login, senhaHash]
+    );
+
+    res.status(201).json({ message: 'Usuário cadastrado com sucesso' });
+  } catch (err) {
+    if (err.code === '23505') {
+      // erro do Postgres para violação de UNIQUE
+      return res.status(409).json({ error: 'Esse login já está em uso' });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao cadastrar usuário' });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { login, senha } = req.body;
+    if (!login || !senha) {
+      return res.status(400).json({ error: 'Login e senha são obrigatórios' });
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM usuarios WHERE login = $1',
+      [login]
+    );
+
+    const usuario = result.rows[0];
+    if (!usuario) {
+      return res.status(401).json({ error: 'Login ou senha inválidos' });
+    }
+
+    const senhaConfere = await bcrypt.compare(senha, usuario.senha_hash);
+    if (!senhaConfere) {
+      return res.status(401).json({ error: 'Login ou senha inválidos' });
+    }
+
+    res.json({ message: 'Login realizado com sucesso', login: usuario.login });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao fazer login' });
   }
 });
 

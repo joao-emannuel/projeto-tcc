@@ -27,6 +27,11 @@ const router = createRouter({
       name: 'gerar-3d',
       component: () => import('../views/Tripo3DView.vue'),
     },
+    {
+      path: '/login',
+      nome: 'login',
+      component: () => import('../views/LoginView.vue'),
+    },
   ],
 })
 

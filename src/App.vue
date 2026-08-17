@@ -9,6 +9,7 @@ import { RouterLink, RouterView } from 'vue-router'
       <RouterLink to="/about" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" active-class="!text-emerald-400 !bg-emerald-400/10">About</RouterLink>
       <RouterLink to="/chat" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" active-class="!text-emerald-400 !bg-emerald-400/10">Chat IA</RouterLink>
       <RouterLink to="/gerar-3d" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" active-class="!text-emerald-400 !bg-emerald-400/10">Gerar 3D</RouterLink>
+      <RouterLink to="/login" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" active-class="!text-emerald-400 !bg-emerald-400/10">Login</RouterLink>
     </nav>
   </header>
   <RouterView />
