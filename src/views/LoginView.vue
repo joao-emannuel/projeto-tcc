@@ -13,7 +13,6 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
   <div class="bg-linear-to-b from-[#000000] to-[#1a2332] min-h-screen w-full relative">
     <div class="absolute top-0 left-0 z-10 flex flex-col">
       <div class="px-[1%] py-[1%]"> <Logo/> </div>
-      <div class="px-[1.25%] py-[3%]"> <Sidebar/> </div>
     </div>
 
     <main class="relative w-full h-screen">
@@ -26,6 +25,11 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
         position-x-offset="0"
         position-y-offset="0"
       >
+
+      <Sidebar
+          position-x-scale="6"
+          position-y-scale="52"
+      />
 
         <Frame class="EnchecaoDeLinguicaFrame"
             background-color=""
