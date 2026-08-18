@@ -1,4 +1,5 @@
 <script setup>
+import LoginLogic from '../logics/Login.js'
 import Logo from '../components/Logo.vue'
 import Sidebar from '../components/Sidebar.vue'
 import Frame from '@/components/gui-objects/Frame.vue';
@@ -6,15 +7,12 @@ import UIListLayout from '@/components/gui-objects/UIListLayout.vue';
 import TextLabel from '@/components/gui-objects/TextLabel.vue';
 import TextBox from '@/components/gui-objects/TextBox.vue';
 import TextButton from '@/components/gui-objects/TextButton.vue';
-import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
+
+const { usernameOrEmail, password, errorMessage, onLoginClick, onForgotPasswordClick } = LoginLogic()
 </script>
 
 <template>
   <div class="bg-linear-to-b from-[#000000] to-[#1a2332] min-h-screen w-full relative">
-    <div class="absolute top-0 left-0 z-10 flex flex-col">
-      <div class="px-[1%] py-[1%]"> <Logo/> </div>
-    </div>
-
     <main class="relative w-full h-screen">
       <Frame class="ScreenFrame"
         background-color=""
@@ -26,27 +24,33 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
         position-y-offset="0"
       >
 
-      <Sidebar
+        <!-- Logo e Sidebar -->
+        <Logo
+          position-x-scale="2"
+          position-y-scale="0"
+        />
+
+        <Sidebar
           position-x-scale="6"
           position-y-scale="52"
-      />
+        />
 
+        <!-- Área decorativa da direita -->
         <Frame class="EnchecaoDeLinguicaFrame"
-            background-color=""
-            width="50"
-            height="100"
-            position-x-scale="75"
-            position-y-scale="50"
-            position-x-offset="0"
-            position-y-offset="0"
+          background-color=""
+          width="50"
+          height="100"
+          position-x-scale="75"
+          position-y-scale="50"
+          position-x-offset="0"
+          position-y-offset="0"
         >
 
-        <UIListLayout direction="vertical" align="center" gap="100" />
-
-        
+          <UIListLayout direction="vertical" horizontal-align="center" gap="100" />
 
         </Frame>
 
+        <!-- Formulário de login -->
         <Frame class="LoginFrame"
           background-color=""
           width="17"
@@ -57,7 +61,7 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
           position-y-offset="0"
         >
 
-          <UIListLayout direction="vertical" align="start" gap="30" />
+          <UIListLayout direction="vertical" horizontal-align="start" gap="30" />
 
           <TextLabel class="TextLabel"
             text="Faça o seu login"
@@ -67,7 +71,8 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
             text-color="#ffffff"
           />
 
-          <TextBox class="loginTextBox"
+          <TextBox class="usernameOrEmailTextBox"
+            v-model:text="usernameOrEmail"
             placeholder-text="Usuário ou e-mail"
             placeholder-color="#8a8a8a"
             background-color="#333333"
@@ -80,7 +85,8 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
             height="15"
           />
 
-          <TextBox class="senhaTextBox"
+          <TextBox class="passwordTextBox"
+            v-model:text="password"
             placeholder-text="Senha"
             placeholder-color="#8a8a8a"
             background-color="#333333"
@@ -94,7 +100,8 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
             height="15"
           />
 
-          <TextButton class="esqueceuSenhaButton"
+          <TextButton class="forgotPasswordButton"
+            @click="onForgotPasswordClick"
             text="Esqueci minha senha"
             text-size="15"
             text-style="normal"
@@ -111,6 +118,7 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
           />
 
           <TextButton class="confirmarButton"
+            @click="onLoginClick"
             text="Fazer Login"
             text-size="20"
             text-style="normal"
@@ -125,8 +133,25 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
             height="17"
           />
 
+          <Transition name="fade">
+            <TextLabel class="ErrorTextLabel"
+              v-if="errorMessage"
+              :text="errorMessage"
+              min-text-size="15"
+              ideal-text-size="15"
+              max-text-size="18"
+              text-color="#d65151"
+              icon="/src/assets/icons/erro.svg"
+              align-self="start"
+              icon-side="right"
+              icon-size="20"
+              icon-gap="5"
+            />
+          </Transition>
+
         </Frame>
 
+        <!-- Rodapé -->
         <TextLabel class="TextLabel"
           text="VisionFade ®"
           min-text-size="1"
@@ -146,3 +171,15 @@ import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
     </main>
   </div>
 </template>
+
+<style scoped>
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.4s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+</style>

@@ -2,7 +2,7 @@
     const props = defineProps({
         src: { type: String, default: '' }, // URL ou path da imagem
         alt: { type: String, default: '' },
-        objectFit: { type: String, default: 'cover' }, // 'cover' | 'contain' | 'fill' | 'none'
+        objectFit: { type: String, default: 'contain' }, // 'cover' | 'contain' | 'fill' | 'none'
         backgroundTransparency: { type: [String, Number], default: 0 }, // 0 = normal, 100 = invisível
         borderRadius: { type: String, default: '0' }, // px
         stroke: { type: [String, Number], default: 0 },
@@ -69,6 +69,6 @@
 
 <template>
     <div :style="rootStyle">
-        <img :src="src" :alt="alt" :style="imgStyle" />
+        <img :src="src" :alt="alt" :style="imgStyle" :draggable="false" />
     </div>
 </template>

@@ -26,6 +26,7 @@
             : `${props.height}%`
     )
 
+    // ---- Suporte a UIListLayout (igual Roblox) ----
     const listLayout = ref(null) // null = sem list layout, objeto = configurado
 
     function registerListLayout(config) {
@@ -35,15 +36,33 @@
 
     provide('isInsideListLayout', computed(() => listLayout.value !== null))
 
+    // Traduz 'start' | 'center' | 'end' pro valor CSS equivalente.
+    function toFlexValue(align) {
+        if (align === 'center') return 'center'
+        if (align === 'end') return 'flex-end'
+        return 'flex-start'
+    }
+
     const containerStyle = computed(() => {
         if (!listLayout.value) return {}
 
+        const isHorizontal = listLayout.value.direction === 'horizontal'
+
+        // Igual Roblox: HorizontalAlignment e VerticalAlignment são sempre
+        // nomeados de forma fixa, independente da FillDirection. Aqui a
+        // gente traduz isso pro par certo de propriedades CSS (que trocam
+        // de eixo dependendo da flex-direction).
         return {
             display: 'flex',
-            flexDirection: listLayout.value.direction === 'horizontal' ? 'row' : 'column',
-            alignItems:
-                listLayout.value.align === 'center' ? 'center' :
-                listLayout.value.align === 'end' ? 'flex-end' : 'flex-start',
+            flexDirection: isHorizontal ? 'row' : 'column',
+            // Eixo principal (na direção da lista) = justify-content
+            justifyContent: isHorizontal
+                ? toFlexValue(listLayout.value.horizontalAlign)
+                : toFlexValue(listLayout.value.verticalAlign),
+            // Eixo cruzado (perpendicular) = align-items
+            alignItems: isHorizontal
+                ? toFlexValue(listLayout.value.verticalAlign)
+                : toFlexValue(listLayout.value.horizontalAlign),
             gap: `${listLayout.value.gap}px`,
         }
     })

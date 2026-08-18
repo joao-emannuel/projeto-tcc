@@ -25,10 +25,16 @@
         ignoreLayout: { type: Boolean, default: false },
         alignSelf: { type: String, default: null }, // 'start' | 'center' | 'end' — sobrescreve o align do UIListLayout pai, só pra este item
         marginTop: { type: [String, Number], default: null }, // px — sobrescreve o gap do UIListLayout, só pra este item
-        marginBottom: { type: [String, Number], default: null }
+        marginBottom: { type: [String, Number], default: null },
+        icon: { type: String, default: null }, // URL/path da imagem do ícone. null = sem ícone
+        iconSide: { type: String, default: 'left' }, // 'left' | 'right' — de que lado do texto o ícone fica
+        iconSize: { type: [String, Number], default: 16 }, // px — tamanho do ícone (quadrado)
+        iconGap: { type: [String, Number], default: 6 }, // px — espaço entre ícone e texto
     })
 
     import { computed, inject } from 'vue'
+    const emit = defineEmits(['click'])
+
     const fontWeight = computed(() => props.textStyle === 'bold' ? 'bold' : 'normal')
     const fontStyle = computed(() => props.textStyle === 'italic' ? 'italic' : 'normal')
 
@@ -79,29 +85,47 @@
         zIndex: 0,
     }))
 
-    const textStyle = computed(() => ({
+    // Conteúdo (ícone + texto): fica por cima da camada de fundo, sem filtro
+    // nenhum, então nunca escurece junto com o background.
+    const contentStyle = computed(() => ({
         position: 'relative',
         zIndex: 1,
         display: 'flex',
         alignItems: 'center',
+        flexDirection: props.iconSide === 'right' ? 'row-reverse' : 'row',
         justifyContent: props.textSide === 'left' ? 'flex-start' : props.textSide === 'right' ? 'flex-end' : 'center',
+        gap: `${props.iconGap}px`,
         width: '100%',
         height: '100%',
+        paddingLeft: props.textMargin + 'px',
+        paddingRight: props.textMargin + 'px',
+        boxSizing: 'border-box',
+    }))
+
+    const textStyle = computed(() => ({
         fontSize: props.textSize + 'px',
         color: props.textColor,
         fontFamily: props.textFont,
         fontWeight: fontWeight.value,
         fontStyle: fontStyle.value,
-        paddingLeft: props.textMargin + 'px',
-        paddingRight: props.textMargin + 'px',
-        boxSizing: 'border-box',
+        whiteSpace: 'nowrap',
+    }))
+
+    const iconStyle = computed(() => ({
+        width: `${props.iconSize}px`,
+        height: `${props.iconSize}px`,
+        objectFit: 'contain',
+        flexShrink: 0,
     }))
 </script>
 
 <template>
-    <button :style="buttonStyle" class="text-button-root">
+    <button :style="buttonStyle" class="text-button-root" @click="emit('click')">
         <div :style="backgroundStyle"></div>
-        <span :style="textStyle">{{ text }}</span>
+        <span :style="contentStyle">
+            <img v-if="icon" :src="icon" :style="iconStyle" alt="" />
+            <span :style="textStyle">{{ text }}</span>
+        </span>
     </button>
 </template>
 

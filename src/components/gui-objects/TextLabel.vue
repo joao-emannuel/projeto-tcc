@@ -16,7 +16,11 @@
         anchorY: { type: [String, Number], default: 0.5 },
         ignoreLayout: { type: Boolean, default: false },
         marginTop: { type: [String, Number], default: null }, // px — sobrescreve o gap do UIListLayout, só pra este item
-        marginBottom: { type: [String, Number], default: null }
+        marginBottom: { type: [String, Number], default: null },
+        icon: { type: String, default: null }, // URL/path da imagem do ícone. null = sem ícone
+        iconSide: { type: String, default: 'left' }, // 'left' | 'right' — de que lado do texto o ícone fica
+        iconSize: { type: [String, Number], default: 16 }, // px — tamanho do ícone (quadrado)
+        iconGap: { type: [String, Number], default: 6 }, // px — espaço entre ícone e texto
     })
 
     import { computed, inject } from 'vue'
@@ -27,11 +31,10 @@
 
     const rootStyle = computed(() => {
         const base = {
-            fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}vw, ${props.maxTextSize}px)`,
-            color: `color-mix(in srgb, ${props.textColor} ${100 - props.textTransparency}%, transparent)`,
-            fontFamily: props.textFont,
-            fontWeight: fontWeight.value,
-            fontStyle: fontStyle.value,
+            display: 'inline-flex',
+            alignItems: 'center',
+            flexDirection: props.iconSide === 'right' ? 'row-reverse' : 'row',
+            gap: `${props.iconGap}px`,
             whiteSpace: 'nowrap',
         }
 
@@ -51,8 +54,26 @@
             transform: `translate(-${props.anchorX * 100}%, -${props.anchorY * 100}%)`,
         }
     })
+
+    const textStyle = computed(() => ({
+        fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}vw, ${props.maxTextSize}px)`,
+        color: `color-mix(in srgb, ${props.textColor} ${100 - props.textTransparency}%, transparent)`,
+        fontFamily: props.textFont,
+        fontWeight: fontWeight.value,
+        fontStyle: fontStyle.value,
+    }))
+
+    const iconStyle = computed(() => ({
+        width: `${props.iconSize}px`,
+        height: `${props.iconSize}px`,
+        objectFit: 'contain',
+        flexShrink: 0,
+    }))
 </script>
 
 <template>
-    <span :style="rootStyle">{{ text }}</span>
+    <span :style="rootStyle">
+        <img v-if="icon" :src="icon" :style="iconStyle" alt="" />
+        <span :style="textStyle">{{ text }}</span>
+    </span>
 </template>
