@@ -10,6 +10,8 @@
         positionXOffset: { type: [String, Number], default: 0 }, // px
         positionYScale: { type: [String, Number], default: 0 }, // %
         positionYOffset: { type: [String, Number], default: 0 }, // px
+        anchorX: { type: [String, Number], default: 0.5 }, // 0 = esquerda, 0.5 = centro, 1 = direita
+        anchorY: { type: [String, Number], default: 0.5 }, // 0 = topo, 0.5 = centro, 1 = baixo
     })
 
     import { computed, ref, provide } from 'vue'
@@ -78,7 +80,7 @@
             position: 'absolute',
             left: `calc(${positionXScale}% + ${positionXOffset}px)`,
             top: `calc(${positionYScale}% + ${positionYOffset}px)`,
-            transform: 'translate(-50%, -50%)',
+            transform: `translate(-${anchorX * 100}%, -${anchorY * 100}%)`,
             ...containerStyle,
         }"
         class="frame-root"

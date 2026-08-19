@@ -6,12 +6,16 @@ import UIListLayout from '@/components/gui-objects/UIListLayout.vue';
 import TextButton from '@/components/gui-objects/TextButton.vue';
 import TextLabel from '@/components/gui-objects/TextLabel.vue';
 import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
+import SidebarLogic from '@/logics/Sidebar.js';
 
 // A Sidebar recebe posição de fora (quem usa <Sidebar/> decide onde ela fica na tela)
 defineProps({
     positionXScale: { type: [String, Number], default: 50 },
     positionYScale: { type: [String, Number], default: 50 },
 })
+
+const { isOpen, onToggleSidebarClick } = SidebarLogic()
+
 </script>
 
 <template>
@@ -19,14 +23,36 @@ defineProps({
         background-color="#10141d"
         border-radius="30px"
         width="10"
+        min-width="150"
         height="90"
         :position-x-scale="positionXScale"
         :position-y-scale="positionYScale"
+        anchor-x="0"
+        :style="{
+            transition: 'transform 0.35s ease',
+            transform: isOpen
+                ? `translate(0%, -50%)`
+                : `translate(-105%, -50%)`,
+        }"
     >
+
+    <TextButton class="pullBarButton"
+        @click="onToggleSidebarClick"
+        text=""
+        background-color="#101926"
+        border-radius="100"
+        min-width="5"
+        width="2"
+        height="50"
+        stroke="0"
+        position-x-scale="100"
+        position-y-scale="50"
+        ignore-layout
+    />
 
         <UIListLayout direction="vertical" horizontal-align="center" vertical-align="start" gap="10" />
         
-        <TextButton class="esqueceuSenhaButton"
+        <TextButton class="LoginButton"
             text="Faça Login"
             text-size="20"
             text-style="normal"
@@ -46,7 +72,7 @@ defineProps({
             icon-gap="8"
         />
 
-        <TextButton
+        <TextButton class="HomeButton"
             text="Início"
             text-size="18"
             border-radius="100"
@@ -62,7 +88,7 @@ defineProps({
             icon-gap="8"
         />
 
-        <TextButton
+        <TextButton class="GalleryButton"
             text="Galeria"
             text-size="18"
             border-radius="100"
@@ -78,7 +104,7 @@ defineProps({
             icon-gap="8"
         />
 
-        <TextButton
+        <TextButton class="SettingsButton"
             text="Configurações"
             text-size="18"
             border-radius="100"
@@ -93,8 +119,6 @@ defineProps({
             icon-size="18"
             icon-gap="8"
         />
-
-        
 
         <Frame class="SidebarFrame"
             background-color=""

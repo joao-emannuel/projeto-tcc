@@ -31,7 +31,7 @@ const { usernameOrEmail, password, errorMessage, onLoginClick, onForgotPasswordC
         />
 
         <Sidebar
-          position-x-scale="6"
+          position-x-scale="0.5"
           position-y-scale="52"
         />
 
@@ -55,7 +55,7 @@ const { usernameOrEmail, password, errorMessage, onLoginClick, onForgotPasswordC
           background-color=""
           width="17"
           height="30"
-          position-x-scale="22"
+          position-x-scale="50"
           position-y-scale="40"
           position-x-offset="0"
           position-y-offset="0"
