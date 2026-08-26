@@ -37,6 +37,7 @@ async function createTable() {
           telefone TEXT NOT NULL,
           email TEXT NOT NULL,
           senha_hash TEXT NOT NULL,
+          nivel_acesso TEXT NOT NULL DEFAULT 'usuario',
           ativo BOOLEAN NOT NULL DEFAULT true,
           criado_em TIMESTAMP NOT NULL DEFAULT now()
         );
