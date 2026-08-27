@@ -26,15 +26,36 @@ export default function ForgotPasswordLogic() {
     errorMessage.value = ''
     console.log('Recuperar senha para:', email.value)
 
-    // lógica de recuperação de senha do banco de dados aqui
+    fetch('http://localhost:3000/api/esqueci-senha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value })
+    })
+      .then(response => response.json().then(data => ({ status: response.status, data })))
+      .then(({ status, data }) => {
+        if (status !== 200) {
+          errorMessage.value = data.erro
+          clearTimeout(messageTimeoutId)
+          messageTimeoutId = setTimeout(() => {
+            errorMessage.value = ''
+          }, 3000)
+          return
+        }
 
-    
-
-    successMessage.value = 'Se esse e-mail existir, enviamos um link.'
-    clearTimeout(messageTimeoutId)
-    messageTimeoutId = setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
+        successMessage.value = data.mensagem
+        clearTimeout(messageTimeoutId)
+        messageTimeoutId = setTimeout(() => {
+          successMessage.value = ''
+        }, 3000)
+      })
+      .catch(err => {
+        console.error(err)
+        errorMessage.value = 'Não foi possível conectar ao servidor.'
+        clearTimeout(messageTimeoutId)
+        messageTimeoutId = setTimeout(() => {
+          errorMessage.value = ''
+        }, 3000)
+      })
   }
 
   function onBackToLoginClick() {

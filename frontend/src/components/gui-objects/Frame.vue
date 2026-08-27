@@ -72,7 +72,7 @@ const containerStyle = computed(() => {
 
 <template>
     <div :style="{
-        backgroundColor: backgroundColor,
+        background: backgroundColor,
         borderRadius: borderRadius,
         width: widthCss,
         height: heightCss,

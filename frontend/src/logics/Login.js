@@ -47,6 +47,7 @@ export default function LoginLogic() {
           }
 
           console.log('Login bem-sucedido:', data)
+          localStorage.setItem('usuario', JSON.stringify(data))
           router.push('/inicio')
         })
         .catch(err => {

@@ -1,37 +1,37 @@
 <script setup>
 const props = defineProps({
     text: { type: String, default: '' },
-    minTextSize: { type: [String, Number], default: 12 }, // px — nunca menor que isso
-    idealTextSize: { type: [String, Number], default: 2 }, // vw — tamanho que tenta escalar
-    maxTextSize: { type: [String, Number], default: 24 }, // px — nunca maior que isso
-    textMargin: { type: [String, Number], default: 10 }, // px
+    minTextSize: { type: [String, Number], default: 12 },
+    idealTextSize: { type: [String, Number], default: 2 },
+    maxTextSize: { type: [String, Number], default: 24 },
+    textMargin: { type: [String, Number], default: 10 },
     textColor: { type: String, default: '#ffffff' },
     textSide: { type: String, default: 'center' },
     stroke: { type: [String, Number], default: 1 },
     strokeColor: { type: String, default: '#ffffff' },
     backgroundColor: { type: String, default: '#404040' },
-    backgroundTransparency: { type: [String, Number], default: 0 }, // 0 = normal, 100 = totalmente escurecido
-    glassBlur: { type: [String, Number], default: 0 }, // px — quanto maior, mais forte o efeito vidro
-    borderRadius: { type: String, default: '10' }, // px
+    backgroundTransparency: { type: [String, Number], default: 0 },
+    glassBlur: { type: [String, Number], default: 0 },
+    borderRadius: { type: String, default: '10' },
     textFont: { type: String, default: 'arial' },
     textStyle: { type: String, default: 'normal' },
-    width: { type: [String, Number], default: 25 }, // % do pai
-    height: { type: [String, Number], default: 10 }, // % do pai
-    minWidth: { type: [String, Number], default: 0 }, // px
-    positionXScale: { type: [String, Number], default: 0 }, // %
-    positionXOffset: { type: [String, Number], default: 0 }, // px
+    width: { type: [String, Number], default: 25 },
+    height: { type: [String, Number], default: 10 },
+    minWidth: { type: [String, Number], default: 0 },
+    positionXScale: { type: [String, Number], default: 0 },
+    positionXOffset: { type: [String, Number], default: 0 },
     positionYScale: { type: [String, Number], default: 0 },
     positionYOffset: { type: [String, Number], default: 0 },
-    anchorX: { type: [String, Number], default: 0.5 }, // 0 = esquerda, 0.5 = centro, 1 = direita
+    anchorX: { type: [String, Number], default: 0.5 },
     anchorY: { type: [String, Number], default: 0.5 },
     ignoreLayout: { type: Boolean, default: false },
-    alignSelf: { type: String, default: null }, // 'start' | 'center' | 'end' — sobrescreve o align do UIListLayout pai, só pra este item
-    marginTop: { type: [String, Number], default: null }, // px — sobrescreve o gap do UIListLayout, só pra este item
+    alignSelf: { type: String, default: null },
+    marginTop: { type: [String, Number], default: null },
     marginBottom: { type: [String, Number], default: null },
-    icon: { type: String, default: null }, // URL/path da imagem do ícone. null = sem ícone
-    iconSide: { type: String, default: 'left' }, // 'left' | 'right' — de que lado do texto o ícone fica
-    iconSize: { type: [String, Number], default: 16 }, // px — tamanho do ícone (quadrado)
-    iconGap: { type: [String, Number], default: 6 }, // px — espaço entre ícone e texto
+    icon: { type: String, default: null },
+    iconSide: { type: String, default: 'left' },
+    iconSize: { type: [String, Number], default: 16 },
+    iconGap: { type: [String, Number], default: 6 },
 })
 
 import { computed, inject } from 'vue'
@@ -41,6 +41,14 @@ const fontWeight = computed(() => props.textStyle === 'bold' ? 'bold' : 'normal'
 const fontStyle = computed(() => props.textStyle === 'italic' ? 'italic' : 'normal')
 
 const isInsideListLayout = inject('isInsideListLayout', computed(() => false))
+
+// Só ganha posição própria (fora do fluxo) quando NÃO está numa lista, ou
+// quando ignoreLayout for explicitamente true.
+const isPositioned = computed(() => !isInsideListLayout.value || props.ignoreLayout)
+
+const positionTransform = computed(() =>
+    `translate(-${props.anchorX * 100}%, -${props.anchorY * 100}%)`
+)
 
 const buttonStyle = computed(() => {
     const base = {
@@ -56,7 +64,7 @@ const buttonStyle = computed(() => {
         overflow: 'hidden',
     }
 
-    if (isInsideListLayout.value && !props.ignoreLayout) {
+    if (!isPositioned.value) {
         return {
             ...base,
             flexShrink: 0,
@@ -74,7 +82,7 @@ const buttonStyle = computed(() => {
         position: 'absolute',
         left: `calc(${props.positionXScale}% + ${props.positionXOffset}px)`,
         top: `calc(${props.positionYScale}% - ${props.positionYOffset}px)`,
-        transform: `translate(-${props.anchorX * 100}%, -${props.anchorY * 100}%)`,
+        '--pos-transform': positionTransform.value,
     }
 })
 
@@ -87,8 +95,6 @@ const backgroundStyle = computed(() => ({
     zIndex: 0,
 }))
 
-// Conteúdo (ícone + texto): fica por cima da camada de fundo, sem filtro
-// nenhum, então nunca escurece junto com o background.
 const contentStyle = computed(() => ({
     position: 'relative',
     zIndex: 1,
@@ -104,8 +110,6 @@ const contentStyle = computed(() => ({
     boxSizing: 'border-box',
 }))
 
-// Mesmo padrão do TextLabel: nunca menor que minTextSize, nunca maior que
-// maxTextSize, tentando escalar pra idealTextSize (vw) no meio termo.
 const textStyle = computed(() => ({
     fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}vw, ${props.maxTextSize}px)`,
     color: props.textColor,
@@ -124,7 +128,8 @@ const iconStyle = computed(() => ({
 </script>
 
 <template>
-    <button :style="buttonStyle" class="text-button-root" @click="emit('click')">
+    <button :style="buttonStyle" class="text-button-root" :class="{ 'is-positioned': isPositioned }"
+        @click="emit('click')">
         <div :style="backgroundStyle"></div>
         <span :style="contentStyle">
             <img v-if="icon" :src="icon" :style="iconStyle" alt="" />
@@ -134,16 +139,34 @@ const iconStyle = computed(() => ({
 </template>
 
 <style scoped>
-.text-button-root {
+/* Botões DENTRO da lista (sem posição própria): CSS idêntico ao original,
+   nenhuma variável nova, nenhum transform novo em repouso. */
+.text-button-root:not(.is-positioned) {
     transition: filter 0.15s ease, transform 0.15s ease;
 }
 
-.text-button-root:hover {
+.text-button-root:not(.is-positioned):hover {
     transform: scale(1.03);
 }
 
-.text-button-root:active {
+.text-button-root:not(.is-positioned):active {
     filter: brightness(0.9);
     transform: scale(0.98);
+}
+
+/* Botões COM posição própria: precisam manter o translate sempre,
+   e somar o scale por cima no hover/active. */
+.text-button-root.is-positioned {
+    transition: filter 0.15s ease, transform 0.15s ease;
+    transform: var(--pos-transform) scale(1);
+}
+
+.text-button-root.is-positioned:hover {
+    transform: var(--pos-transform) scale(1.03);
+}
+
+.text-button-root.is-positioned:active {
+    filter: brightness(0.9);
+    transform: var(--pos-transform) scale(0.98);
 }
 </style>

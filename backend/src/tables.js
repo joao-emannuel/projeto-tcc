@@ -39,7 +39,9 @@ async function createTable() {
           senha_hash TEXT NOT NULL,
           nivel_acesso TEXT NOT NULL DEFAULT 'usuario',
           ativo BOOLEAN NOT NULL DEFAULT true,
-          criado_em TIMESTAMP NOT NULL DEFAULT now()
+          criado_em TIMESTAMP NOT NULL DEFAULT now(),
+          token_redefinicao_senha TEXT,
+          token_redefinicao_senha_expira TIMESTAMP
         );
     `)
 

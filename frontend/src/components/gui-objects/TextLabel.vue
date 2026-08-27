@@ -8,6 +8,7 @@ const props = defineProps({
     textTransparency: { type: [String, Number], default: 0 },
     textFont: { type: String, default: 'arial' },
     textStyle: { type: String, default: 'normal' },
+    textWrapped: { type: Boolean, default: false },
     positionXScale: { type: [String, Number], default: 0 }, // %
     positionXOffset: { type: [String, Number], default: 0 }, // px
     positionYScale: { type: [String, Number], default: 0 },
@@ -35,7 +36,8 @@ const rootStyle = computed(() => {
         alignItems: 'center',
         flexDirection: props.iconSide === 'right' ? 'row-reverse' : 'row',
         gap: `${props.iconGap}px`,
-        whiteSpace: 'nowrap',
+        whiteSpace: props.textWrapped ? 'normal' : 'nowrap',
+        ...(props.textWrapped ? { width: '100%', maxWidth: '100%', textAlign: 'center' } : {}),
     }
 
     if (isInsideListLayout.value && !props.ignoreLayout) {
@@ -55,12 +57,24 @@ const rootStyle = computed(() => {
     }
 })
 
+const isGradient = computed(() => props.textColor.includes('gradient'))
+
 const textStyle = computed(() => ({
-    fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}vw, ${props.maxTextSize}px)`,
-    color: `color-mix(in srgb, ${props.textColor} ${100 - props.textTransparency}%, transparent)`,
+    fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}cqw, ${props.maxTextSize}px)`,
     fontFamily: props.textFont,
     fontWeight: fontWeight.value,
     fontStyle: fontStyle.value,
+    opacity: (100 - props.textTransparency) / 100,
+    ...(isGradient.value
+        ? {
+            backgroundImage: props.textColor,
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            color: 'transparent',
+        }
+        : {
+            color: props.textColor,
+        }),
 }))
 
 const iconStyle = computed(() => ({
