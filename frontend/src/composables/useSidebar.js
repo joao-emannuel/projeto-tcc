@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 
 const isOpen = ref(true)
 
-export default function SidebarLogic() {
+export default function useSidebar() {
   const router = useRouter()
 
   const usuarioSalvo = computed(() => {
@@ -19,7 +19,6 @@ export default function SidebarLogic() {
 
   function onToggleSidebarClick() {
     isOpen.value = !isOpen.value
-    console.log('Sidebar aberta?', isOpen.value)
   }
 
   function onLogoutClick() {

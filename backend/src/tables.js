@@ -1,35 +1,16 @@
 import pg from 'pg'
-import dotenv from 'dotenv'
-
-dotenv.config()
+import { config } from './config.js'
+import { applyMigrations } from './migrations/applyMigrations.js'
 
 const { Client } = pg
 
-const {
-    PGHOST,
-    PGPORT,
-    PGUSER,
-    PGPASSWORD,
-    PGDATABASE,
-    PGSSL,
-} = process.env
-
-const useSSL = PGSSL === 'true'
-const sslOption = useSSL ? { rejectUnauthorized: false } : false
-
 async function createTable() {
-    const client = new Client({
-        host: PGHOST,
-        port: Number(PGPORT),
-        user: PGUSER,
-        password: PGPASSWORD,
-        database: PGDATABASE,
-        ssl: sslOption
-    })
+    const client = new Client(config.database)
 
     await client.connect()
 
-    await client.query(`
+    try {
+        await client.query(`
         CREATE TABLE IF NOT EXISTS usuarios (
           id SERIAL PRIMARY KEY,
           nome TEXT NOT NULL,
@@ -45,9 +26,12 @@ async function createTable() {
         );
     `)
 
-    console.log('✅ Tabela "usuarios" pronta.')
-
-    await client.end()
+        console.log('✅ Tabela "usuarios" pronta.')
+        await applyMigrations(client)
+        console.log('✅ Tabela "fotos" pronta.')
+    } finally {
+        await client.end()
+    }
 }
 
 async function main() {

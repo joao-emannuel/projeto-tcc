@@ -1,4 +1,6 @@
 <script setup>
+import { computed, inject } from 'vue'
+
 const props = defineProps({
     placeholderText: { type: String, default: '' },
     textType: { type: String, default: 'text' },
@@ -8,10 +10,10 @@ const props = defineProps({
     textSide: { type: String, default: 'center' },
     textMargin: { type: [String, Number], default: 10 },
     textSize: { type: [String, Number], default: 1 },
+    textStyle: { type: String, default: 'normal' },
     stroke: { type: [String, Number], default: 0 },
     strokeColor: { type: String, default: '#ffffff' },
     placeholderColor: { type: String, default: '#ffffff' },
-    placeholderTextColor: { type: String, default: '#000000' },
     borderRadius: { type: String, default: '10' }, // px
     width: { type: [String, Number], default: 25 }, // % do pai
     height: { type: [String, Number], default: 10 }, // % do pai
@@ -25,7 +27,6 @@ const props = defineProps({
     ignoreLayout: { type: Boolean, default: false },
 })
 
-import { computed, inject } from 'vue'
 const fontWeight = computed(() => props.textStyle === 'bold' ? 'bold' : 'normal')
 const fontStyle = computed(() => props.textStyle === 'italic' ? 'italic' : 'normal')
 

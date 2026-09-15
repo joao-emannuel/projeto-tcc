@@ -1,7 +1,8 @@
-import { ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { apiRequest } from '@/services/api.js'
 
-export default function ResetPasswordLogic() {
+export default function useResetPassword() {
   const route = useRoute()
   const router = useRouter()
 
@@ -14,8 +15,8 @@ export default function ResetPasswordLogic() {
 
   let messageTimeoutId = null
 
-  function showError(msg) {
-    errorMessage.value = msg
+  function showError(message) {
+    errorMessage.value = message
     successMessage.value = ''
     clearTimeout(messageTimeoutId)
     messageTimeoutId = setTimeout(() => {
@@ -23,7 +24,9 @@ export default function ResetPasswordLogic() {
     }, 3000)
   }
 
-  function onConfirmClick() {
+  onUnmounted(() => clearTimeout(messageTimeoutId))
+
+  async function onConfirmClick() {
     if (novaSenha.value === '' || confirmarSenha.value === '') {
       showError('Preencha os dois campos.')
       return
@@ -39,26 +42,20 @@ export default function ResetPasswordLogic() {
       return
     }
 
+    clearTimeout(messageTimeoutId)
     errorMessage.value = ''
+    successMessage.value = ''
 
-    fetch('http://localhost:3000/api/redefinir-senha', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, novaSenha: novaSenha.value })
-    })
-      .then(response => response.json().then(data => ({ status: response.status, data })))
-      .then(({ status, data }) => {
-        if (status !== 200) {
-          showError(data.erro)
-          return
-        }
+    try {
+      const data = await apiRequest('/redefinir-senha', {
+        method: 'POST',
+        body: { token, novaSenha: novaSenha.value }
+      })
 
-        successMessage.value = data.mensagem
-      })
-      .catch(err => {
-        console.error(err)
-        showError('Não foi possível conectar ao servidor.')
-      })
+      successMessage.value = data.mensagem
+    } catch (error) {
+      showError(error.message)
+    }
   }
 
   function onBackToLoginClick() {

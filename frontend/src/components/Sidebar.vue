@@ -1,17 +1,17 @@
 <script setup>
-import Frame from '@/components/gui-objects/Frame.vue';
-import UIListLayout from '@/components/gui-objects/UIListLayout.vue';
-import TextButton from '@/components/gui-objects/TextButton.vue';
-import TextLabel from '@/components/gui-objects/TextLabel.vue';
-import ImageLabel from '@/components/gui-objects/ImageLabel.vue';
-import SidebarLogic from '@/logics/Sidebar.js';
+import Frame from '@/components/gui-objects/Frame.vue'
+import UIListLayout from '@/components/gui-objects/UIListLayout.vue'
+import TextButton from '@/components/gui-objects/TextButton.vue'
+import TextLabel from '@/components/gui-objects/TextLabel.vue'
+import ImageLabel from '@/components/gui-objects/ImageLabel.vue'
+import useSidebar from '@/composables/useSidebar.js'
 
 defineProps({
     positionXScale: { type: [String, Number], default: 50 },
     positionYScale: { type: [String, Number], default: 50 },
 })
 
-const { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, onLogoutClick } = SidebarLogic()
+const { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, onLogoutClick } = useSidebar()
 
 </script>
 
@@ -50,7 +50,7 @@ const { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, onLogoutClick 
             icon="/src/assets/icons/configuracoes.svg" icon-side="left" icon-size="18" icon-gap="8" />
 
         <Frame class="SidebarFrame" background-color="" width="100" height="30" position-y-scale="85"
-            position-x-scale="50">
+            position-x-scale="50" ignore-layout>
             <UIListLayout direction="horizontal" horizontal-align="center" vertical-align="center" gap="10" />
 
             <TextLabel class="TextLabel" text="Entre em contato" min-text-size="10" ideal-text-size="10"

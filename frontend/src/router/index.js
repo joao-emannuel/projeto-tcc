@@ -3,6 +3,7 @@ import LoginView from '../views/Login.vue'
 import ForgotPasswordView from '../views/ForgotPassword.vue'
 import ResetPasswordView from '@/views/ResetPassword.vue'
 import HomeView from '../views/Home.vue'
+import CustomizarView from '@/views/Customizar.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,12 @@ const router = createRouter({
       path: '/inicio',
       name: 'home',
       component: HomeView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/customizar',
+      name: 'customizar',
+      component: CustomizarView,
       meta: { requiresAuth: true }
     }
   ],

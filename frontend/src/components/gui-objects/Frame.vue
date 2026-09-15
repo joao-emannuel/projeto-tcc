@@ -1,7 +1,11 @@
 <script setup>
+import { computed, inject, ref, provide } from 'vue'
+
 const props = defineProps({
     backgroundColor: { type: String, default: 'transparent' },
     borderRadius: { type: String, default: '0px' },
+    stroke: { type: [String, Number], default: 0 }, // espessura do contorno em px
+    strokeColor: { type: String, default: '#ffffff' },
     width: { type: [String, Number], default: 100 },  // % do pai
     height: { type: [String, Number], default: 100 }, // % do pai
     minWidth: { type: [String, Number], default: null },  // px — nunca menor que isso
@@ -12,9 +16,27 @@ const props = defineProps({
     positionYOffset: { type: [String, Number], default: 0 }, // px
     anchorX: { type: [String, Number], default: 0.5 }, // 0 = esquerda, 0.5 = centro, 1 = direita
     anchorY: { type: [String, Number], default: 0.5 }, // 0 = topo, 0.5 = centro, 1 = baixo
+    ignoreLayout: { type: Boolean, default: false }, // mantém a posição manual mesmo dentro de uma lista
 })
 
-import { computed, ref, provide } from 'vue'
+// A lista do pai posiciona este Frame; a lista deste Frame organiza seus filhos.
+const parentHasListLayout = inject('isInsideListLayout', ref(false))
+
+const positionStyle = computed(() => {
+    if (parentHasListLayout.value && !props.ignoreLayout) {
+        return {
+            position: 'relative',
+            flexShrink: 0,
+        }
+    }
+
+    return {
+        position: 'absolute',
+        left: `calc(${props.positionXScale}% + ${props.positionXOffset}px)`,
+        top: `calc(${props.positionYScale}% + ${props.positionYOffset}px)`,
+        transform: `translate(-${props.anchorX * 100}%, -${props.anchorY * 100}%)`,
+    }
+})
 
 const widthCss = computed(() =>
     props.minWidth !== null
@@ -74,12 +96,10 @@ const containerStyle = computed(() => {
     <div :style="{
         background: backgroundColor,
         borderRadius: borderRadius,
+        boxShadow: `inset 0 0 0 ${stroke}px ${strokeColor}`,
         width: widthCss,
         height: heightCss,
-        position: 'absolute',
-        left: `calc(${positionXScale}% + ${positionXOffset}px)`,
-        top: `calc(${positionYScale}% + ${positionYOffset}px)`,
-        transform: `translate(-${anchorX * 100}%, -${anchorY * 100}%)`,
+        ...positionStyle,
         ...containerStyle,
     }" class="frame-root">
         <slot></slot>
@@ -88,7 +108,6 @@ const containerStyle = computed(() => {
 
 <style scoped>
 .frame-root {
-    position: relative;
     container-type: size;
 }
 </style>

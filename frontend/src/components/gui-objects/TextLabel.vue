@@ -9,6 +9,11 @@ const props = defineProps({
     textFont: { type: String, default: 'arial' },
     textStyle: { type: String, default: 'normal' },
     textWrapped: { type: Boolean, default: false },
+    textAlign: {
+        type: String,
+        default: 'center',
+        validator: value => ['start', 'center', 'end'].includes(value),
+    },
     positionXScale: { type: [String, Number], default: 0 }, // %
     positionXOffset: { type: [String, Number], default: 0 }, // px
     positionYScale: { type: [String, Number], default: 0 },
@@ -30,6 +35,13 @@ const fontStyle = computed(() => props.textStyle === 'italic' ? 'italic' : 'norm
 
 const isInsideListLayout = inject('isInsideListLayout', computed(() => false))
 
+const wrappedJustifyContent = computed(() => {
+    if (props.textAlign === 'center') return 'center'
+    const alignAtStart = props.textAlign === 'start'
+    const reversed = props.iconSide === 'right'
+    return alignAtStart !== reversed ? 'flex-start' : 'flex-end'
+})
+
 const rootStyle = computed(() => {
     const base = {
         display: 'inline-flex',
@@ -37,7 +49,12 @@ const rootStyle = computed(() => {
         flexDirection: props.iconSide === 'right' ? 'row-reverse' : 'row',
         gap: `${props.iconGap}px`,
         whiteSpace: props.textWrapped ? 'normal' : 'nowrap',
-        ...(props.textWrapped ? { width: '100%', maxWidth: '100%', textAlign: 'center' } : {}),
+        ...(props.textWrapped ? {
+            width: '100%',
+            maxWidth: '100%',
+            textAlign: props.textAlign,
+            justifyContent: wrappedJustifyContent.value,
+        } : {}),
     }
 
     if (isInsideListLayout.value && !props.ignoreLayout) {

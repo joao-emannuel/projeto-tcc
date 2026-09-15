@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "db:setup": "node src/tables.js",
+    "db:migrate": "node src/migrate.js",
+    "test": "node --experimental-test-module-mocks --test --test-isolation=none test/*.test.js"
   },
   "keywords": [],
   "author": "",
