@@ -11,7 +11,7 @@ defineProps({
     positionYScale: { type: [String, Number], default: 50 },
 })
 
-const { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, onLogoutClick } = useSidebar()
+const { isOpen, onToggleSidebarClick, estaLogado, textoBoasVindas, onLogoutClick } = useSidebar()
 
 </script>
 
@@ -30,7 +30,7 @@ const { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, onLogoutClick 
 
         <UIListLayout direction="vertical" horizontal-align="center" vertical-align="start" gap="10" />
 
-        <TextLabel class="UserLabel" :text="`Bem vindo, ${apelidoExibido}`" min-text-size="15" ideal-text-size="20" max-text-size="20"
+        <TextLabel class="UserLabel" :text="textoBoasVindas" min-text-size="15" ideal-text-size="20" max-text-size="20"
             text-style="normal" text-color="#d9d9d9" icon="/src/assets/icons/pessoa.svg" align-self="start"
             icon-side="left" icon-size="18" icon-gap="8" margin-top="20" margin-bottom="7" />
 

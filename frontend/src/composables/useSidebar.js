@@ -17,6 +17,10 @@ export default function useSidebar() {
     estaLogado.value ? usuarioSalvo.value.apelido : 'Sem Cadastro'
   )
 
+  const textoBoasVindas = computed(() =>
+    estaLogado.value ? `Bem vindo, ${apelidoExibido.value}` : 'Sem Registro'
+  )
+
   function onToggleSidebarClick() {
     isOpen.value = !isOpen.value
   }
@@ -26,5 +30,5 @@ export default function useSidebar() {
     router.push('/')
   }
 
-  return { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, onLogoutClick }
+  return { isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, textoBoasVindas, onLogoutClick }
 }
