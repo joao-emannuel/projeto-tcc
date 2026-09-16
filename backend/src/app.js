@@ -4,6 +4,8 @@ import usersRouter from './routes/users.js'
 import loginRouter from './routes/login.js'
 import passwordResetRouter from './routes/forgot-password.js'
 import photosRouter from './routes/photos.js'
+import adminRouter from './routes/admin.js'
+import accountRouter from './routes/account.js'
 
 const app = express()
 
@@ -14,5 +16,7 @@ app.use(express.json())
 app.use('/api/usuarios', usersRouter)
 app.use('/api/login', loginRouter)
 app.use('/api', passwordResetRouter)
+app.use('/api/admin', adminRouter)
+app.use('/api', accountRouter)
 
 export default app

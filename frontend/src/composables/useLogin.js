@@ -1,6 +1,7 @@
 import { onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { apiRequest } from '@/services/api.js'
+import { apiRequest } from '../services/api.js'
+import { saveSession } from '../services/session.js'
 
 export default function useLogin() {
   const router = useRouter()
@@ -40,8 +41,8 @@ export default function useLogin() {
         fallbackMessage: 'Não foi possível fazer login.'
       })
 
-      localStorage.setItem('usuario', JSON.stringify(data))
-      router.push('/inicio')
+      saveSession(data)
+      await router.replace({ name: 'home' })
     } catch (error) {
       showError(error.message)
     }

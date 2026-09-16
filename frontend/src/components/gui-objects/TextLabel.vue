@@ -6,7 +6,7 @@ const props = defineProps({
     maxTextSize: { type: [String, Number], default: 24 }, // px — nunca maior que isso
     textColor: { type: String, default: '#ffffff' },
     textTransparency: { type: [String, Number], default: 0 },
-    textFont: { type: String, default: 'arial' },
+    textFont: { type: String, default: 'Inter' },
     textStyle: { type: String, default: 'normal' },
     textWrapped: { type: Boolean, default: false },
     textAlign: {
@@ -78,7 +78,7 @@ const isGradient = computed(() => props.textColor.includes('gradient'))
 
 const textStyle = computed(() => ({
     fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}cqw, ${props.maxTextSize}px)`,
-    fontFamily: props.textFont,
+    fontFamily: `${props.textFont}, Arial, sans-serif`,
     fontWeight: fontWeight.value,
     fontStyle: fontStyle.value,
     opacity: (100 - props.textTransparency) / 100,

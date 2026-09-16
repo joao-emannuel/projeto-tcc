@@ -1,8 +1,9 @@
 import { Router } from 'express'
-import { createUser, listUsers } from '../services/usersService.js'
-import { ServiceError } from '../services/serviceError.js'
+import { listUsers } from '../services/usersService.js'
+import { requireSession, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
+router.use(requireSession, requireAdmin)
 
 router.get('/', async (req, res) => {
   try {
@@ -13,16 +14,8 @@ router.get('/', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
-  try {
-    res.status(201).json(await createUser(req.body))
-  } catch (err) {
-    if (err instanceof ServiceError) {
-      return res.status(err.status).json({ erro: err.message })
-    }
-    console.error(err)
-    res.status(500).json({ erro: 'Erro ao criar usuário.' })
-  }
+router.post('/', (req, res) => {
+  res.status(410).json({ erro: 'Cadastre usuários pela interface do administrador para verificar o e-mail.' })
 })
 
 export default router

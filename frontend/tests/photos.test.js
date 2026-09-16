@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createRenderer } from 'vue'
-import { createMemoryHistory, createRouter } from 'vue-router'
 import { uploadPhoto } from '../src/services/photos.js'
 import usePhotoUpload from '../src/composables/usePhotoUpload.js'
+import { createFlowRouter, goInHistory } from './helpers/flowRouter.js'
 
 const file = () => new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], 'foto do rosto.png', { type: 'image/png' })
 const savedPhoto = { id: 42, usuario_id: 7, nome_original: 'foto do rosto.png' }
@@ -47,24 +47,19 @@ async function mountUpload(context) {
     if (previousStorage) Object.defineProperty(globalThis, 'localStorage', previousStorage)
     else delete globalThis.localStorage
   })
-  const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      { path: '/', component: { render: () => null } },
-      { path: '/customizar', name: 'customizar', component: { render: () => null } },
-    ],
-  })
+  const router = createFlowRouter(context)
   const renderer = createRenderer({
     createComment: () => ({}), insert() {}, remove() {}, parentNode: () => null, nextSibling: () => null,
   })
   let upload
   const app = renderer.createApp({ setup() { upload = usePhotoUpload(); return () => null } })
   app.use(router)
-  await router.push('/')
+  await router.push({ name: 'configuracoes' })
+  await router.push({ name: 'home' })
   await router.isReady()
   app.mount({})
   context.after(() => app.unmount())
-  return { upload, router }
+  return { upload, router, app }
 }
 
 test('aguarda salvar, impede envio duplicado e redireciona com o ID da foto', async context => {
@@ -73,7 +68,7 @@ test('aguarda salvar, impede envio duplicado e redireciona com o ID da foto', as
   const { upload, router } = await mountUpload(context)
   const pending = upload.onFileSelected(file())
   assert.equal(upload.isUploading.value, true)
-  assert.equal(router.currentRoute.value.path, '/')
+  assert.equal(router.currentRoute.value.path, '/inicio')
   await upload.onFileSelected(file())
   assert.equal(fetchMock.mock.callCount(), 1)
   finishRequest(new Response(JSON.stringify(savedPhoto), { status: 201 }))
@@ -81,6 +76,8 @@ test('aguarda salvar, impede envio duplicado e redireciona com o ID da foto', as
   assert.equal(upload.isUploading.value, false)
   assert.equal(router.currentRoute.value.path, '/customizar')
   assert.equal(router.currentRoute.value.query.fotoId, '42')
+  await goInHistory(router, -1)
+  assert.equal(router.currentRoute.value.name, 'configuracoes', 'a transição substitui o início no histórico')
 })
 
 test('falha ao salvar mantém a tela e permite tentar novamente', async context => {
@@ -89,5 +86,41 @@ test('falha ao salvar mantém a tela e permite tentar novamente', async context 
   await upload.onFileSelected(file())
   assert.equal(upload.isUploading.value, false)
   assert.equal(upload.errorMessage.value, 'Erro ao salvar a foto.')
-  assert.equal(router.currentRoute.value.path, '/')
+  assert.equal(router.currentRoute.value.path, '/inicio')
+})
+
+test('upload concluído depois de sair do início não muda a tela nem autoriza o link', async context => {
+  let finishRequest
+  context.mock.method(globalThis, 'fetch', () => new Promise(resolve => { finishRequest = resolve }))
+  const { upload, router } = await mountUpload(context)
+  const pending = upload.onFileSelected(file())
+  await router.push({ name: 'configuracoes' })
+  await router.push({ name: 'home' })
+  finishRequest(new Response(JSON.stringify(savedPhoto), { status: 201 }))
+  await pending
+  assert.equal(router.currentRoute.value.name, 'home')
+  await router.push('/customizar?fotoId=42')
+  assert.equal(router.currentRoute.value.name, 'home')
+})
+
+test('upload concluído após desmontar o componente não redireciona', async context => {
+  let finishRequest
+  context.mock.method(globalThis, 'fetch', () => new Promise(resolve => { finishRequest = resolve }))
+  const { upload, router, app } = await mountUpload(context)
+  const replaceMock = context.mock.method(router, 'replace')
+  const pending = upload.onFileSelected(file())
+  app.unmount()
+  finishRequest(new Response(JSON.stringify(savedPhoto), { status: 201 }))
+  await pending
+  assert.equal(replaceMock.mock.callCount(), 0)
+  await router.push('/customizar?fotoId=42')
+  assert.equal(router.currentRoute.value.name, 'home')
+})
+
+test('resposta sem ID válido de foto não autoriza a customização', async context => {
+  context.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ id: 'invalido' }), { status: 201 }))
+  const { upload, router } = await mountUpload(context)
+  await upload.onFileSelected(file())
+  assert.equal(router.currentRoute.value.name, 'home')
+  assert.match(upload.errorMessage.value, /confirmar o salvamento/)
 })

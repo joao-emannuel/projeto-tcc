@@ -1,13 +1,14 @@
 import bcrypt from 'bcrypt'
 import { findUserByLogin } from '../repositories/usersRepository.js'
 import { ServiceError } from './serviceError.js'
+import { createSession, publicUser } from './sessionService.js'
 
 export async function login({ usernameOrEmail, senha } = {}) {
-  if (!usernameOrEmail || !senha) {
+  if (typeof usernameOrEmail !== 'string' || !usernameOrEmail.trim() || typeof senha !== 'string' || !senha) {
     throw new ServiceError('Parâmetros inválidos.', 400)
   }
 
-  const usuario = await findUserByLogin(usernameOrEmail)
+  const usuario = await findUserByLogin(usernameOrEmail.trim())
 
   if (!usuario) {
     throw new ServiceError('Usuário ou senha incorretos.', 401)
@@ -22,6 +23,5 @@ export async function login({ usernameOrEmail, senha } = {}) {
     throw new ServiceError('Usuário ou senha incorretos.', 401)
   }
 
-  const { senha_hash, ...usuarioSemSenha } = usuario
-  return usuarioSemSenha
+  return { ...publicUser(usuario), sessionToken: createSession(usuario.id) }
 }

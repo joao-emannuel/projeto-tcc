@@ -13,7 +13,7 @@ const props = defineProps({
     backgroundTransparency: { type: [String, Number], default: 0 },
     glassBlur: { type: [String, Number], default: 0 },
     borderRadius: { type: String, default: '10' },
-    textFont: { type: String, default: 'arial' },
+    textFont: { type: String, default: 'Inter' },
     textStyle: { type: String, default: 'normal' },
     width: { type: [String, Number], default: 25 },
     height: { type: [String, Number], default: 10 },
@@ -113,7 +113,7 @@ const contentStyle = computed(() => ({
 const textStyle = computed(() => ({
     fontSize: `clamp(${props.minTextSize}px, ${props.idealTextSize}vw, ${props.maxTextSize}px)`,
     color: props.textColor,
-    fontFamily: props.textFont,
+    fontFamily: `${props.textFont}, Arial, sans-serif`,
     fontWeight: fontWeight.value,
     fontStyle: fontStyle.value,
     whiteSpace: 'nowrap',

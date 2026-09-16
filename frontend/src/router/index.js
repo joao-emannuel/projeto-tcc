@@ -4,6 +4,10 @@ import ForgotPasswordView from '../views/ForgotPassword.vue'
 import ResetPasswordView from '@/views/ResetPassword.vue'
 import HomeView from '../views/Home.vue'
 import CustomizarView from '@/views/Customizar.vue'
+import ResultadoFinalView from '@/views/ResultadoFinal.vue'
+import ConfiguracoesView from '@/views/Configuracoes.vue'
+import AdministradorView from '@/views/Administrador.vue'
+import { createRouteGuard } from './routeGuard.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,22 +39,28 @@ const router = createRouter({
       name: 'customizar',
       component: CustomizarView,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/resultadofinal',
+      name: 'resultadofinal',
+      component: ResultadoFinalView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/configuracoes',
+      name: 'configuracoes',
+      component: ConfiguracoesView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/administrador',
+      name: 'administrador',
+      component: AdministradorView,
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ],
 })
 
-router.beforeEach((to, from, next) => {
-  const usuarioLogado = localStorage.getItem('usuario')
-
-  if (to.meta.requiresAuth && !usuarioLogado) {
-    // rota protegida, mas ninguém logado → manda pro login
-    next({ name: 'login' })
-  } else if (to.meta.guestOnly && usuarioLogado) {
-    // rota só pra visitante (login), mas já tem alguém logado → manda pro início
-    next({ name: 'home' })
-  } else {
-    next()
-  }
-})
+router.beforeEach(createRouteGuard())
 
 export default router

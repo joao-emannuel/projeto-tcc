@@ -1,3 +1,5 @@
+import { clearSession, getSessionToken } from './session.js'
+
 const apiUrl = (import.meta.env?.VITE_API_URL || 'http://localhost:3000/api').replace(/\/+$/, '')
 
 export async function apiRequest(path, {
@@ -8,16 +10,19 @@ export async function apiRequest(path, {
 } = {}) {
   let response
   const isFile = typeof Blob !== 'undefined' && body instanceof Blob
+  const sessionToken = getSessionToken()
+  const requestHeaders = {
+    ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
+    ...(body !== undefined ? {
+      'Content-Type': isFile ? body.type || 'application/octet-stream' : 'application/json'
+    } : {}),
+    ...headers,
+  }
 
   try {
     response = await fetch(`${apiUrl}/${path.replace(/^\/+/, '')}`, {
       ...options,
-      headers: {
-        ...(body !== undefined ? {
-          'Content-Type': isFile ? body.type || 'application/octet-stream' : 'application/json'
-        } : {}),
-        ...headers
-      },
+      headers: requestHeaders,
       ...(body !== undefined ? { body: isFile ? body : JSON.stringify(body) } : {})
     })
   } catch {
@@ -26,16 +31,25 @@ export async function apiRequest(path, {
 
   let data = null
 
+  if (response.status === 401 && sessionToken && getSessionToken() === sessionToken
+    && requestHeaders.Authorization === `Bearer ${sessionToken}`) {
+    clearSession()
+  }
+
   if (response.status !== 204) {
     try {
       data = await response.json()
     } catch {
-      throw new Error(response.ok ? 'O servidor retornou uma resposta inválida.' : fallbackMessage)
+      const error = new Error(response.ok ? 'O servidor retornou uma resposta inválida.' : fallbackMessage)
+      error.status = response.status
+      throw error
     }
   }
 
   if (!response.ok) {
-    throw new Error(data?.erro || fallbackMessage)
+    const error = new Error(data?.erro || fallbackMessage)
+    error.status = response.status
+    throw error
   }
 
   return data

@@ -28,7 +28,7 @@ async function createTable() {
 
         console.log('✅ Tabela "usuarios" pronta.')
         await applyMigrations(client)
-        console.log('✅ Tabela "fotos" pronta.')
+        console.log('✅ Migrações de fotos e administração concluídas.')
     } finally {
         await client.end()
     }
