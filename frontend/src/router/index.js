@@ -6,6 +6,7 @@ import HomeView from '../views/Home.vue'
 import CustomizarView from '@/views/Customizar.vue'
 import ResultadoFinalView from '@/views/ResultadoFinal.vue'
 import ConfiguracoesView from '@/views/Configuracoes.vue'
+import GaleriaView from '@/views/Galeria.vue'
 import AdministradorView from '@/views/Administrador.vue'
 import { createRouteGuard } from './routeGuard.js'
 
@@ -50,6 +51,12 @@ const router = createRouter({
       path: '/configuracoes',
       name: 'configuracoes',
       component: ConfiguracoesView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/galeria',
+      name: 'galeria',
+      component: GaleriaView,
       meta: { requiresAuth: true }
     },
     {

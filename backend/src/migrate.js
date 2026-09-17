@@ -7,7 +7,7 @@ const client = new pg.Client(config.database)
 try {
   await client.connect()
   await applyMigrations(client)
-  console.log('Migrações de fotos e administração concluídas.')
+  console.log('Migrações de fotos, administração e galeria concluídas.')
 } catch (err) {
   console.error('Erro ao atualizar o banco:', err.message)
   process.exitCode = 1

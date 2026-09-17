@@ -49,9 +49,34 @@ export async function getPending(client, id, adminId) {
 
 export async function updatePendingCredentials(client, cadastro) {
   await client.query(
-    'UPDATE cadastros_pendentes SET senha_hash = $1, codigo_hash = $2, expira_em = $3 WHERE id = $4',
+    'UPDATE cadastros_pendentes SET senha_hash = $1, codigo_hash = $2, expira_em = $3, tentativas_incorretas = 0 WHERE id = $4',
     [cadastro.senha_hash, cadastro.codigo_hash, cadastro.expira_em, cadastro.id]
   )
+}
+
+export async function incrementIncorrectAttempts(client, id) {
+  const result = await client.query(
+    'UPDATE cadastros_pendentes SET tentativas_incorretas = tentativas_incorretas + 1 WHERE id = $1 RETURNING tentativas_incorretas',
+    [id]
+  )
+  return result.rows[0].tentativas_incorretas
+}
+
+export async function getRecentRegistrationSends(client, adminId, email, since) {
+  const result = await client.query(
+    `SELECT enviado_em FROM envios_cadastro
+     WHERE administrador_id = $1 AND email = $2 AND enviado_em > $3 ORDER BY enviado_em`,
+    [adminId, email, since]
+  )
+  return result.rows.map(row => new Date(row.enviado_em).getTime())
+}
+
+export async function recordRegistrationSend(client, cadastro, sentAt) {
+  await client.query(
+    'INSERT INTO envios_cadastro (administrador_id, email, enviado_em) VALUES ($1, $2, $3)',
+    [cadastro.administrador_id, cadastro.email, sentAt]
+  )
+  await client.query('DELETE FROM envios_cadastro WHERE enviado_em <= $1', [new Date(sentAt.getTime() - 60 * 60 * 1000)])
 }
 
 export async function createConfirmedUser(client, cadastro) {

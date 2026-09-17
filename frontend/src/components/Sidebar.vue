@@ -13,7 +13,7 @@ defineProps({
 
 const {
     isOpen, onToggleSidebarClick, estaLogado, textoBoasVindas, onLogoutClick,
-    isHomeActive, isSettingsActive, onHomeClick, onSettingsClick,
+    isHomeActive, isSettingsActive, onHomeClick, onSettingsClick, isGalleryActive, onGalleryClick,
     isAdminActive, isAdministrator, onAdminClick,
 } = useSidebar()
 
@@ -41,17 +41,19 @@ const {
 
         <p v-if="isAdministrator" class="administrator-label">Você é administrador</p>
 
-        <TextButton class="HomeButton" text="Início" @click="onHomeClick" :aria-current="isHomeActive ? 'page' : undefined"
-            ideal-text-size="20" max-text-size="20" border-radius="100"
-            :stroke="isHomeActive ? 1 : 0" stroke-color="#8CB0CA" background-color="linear-gradient(90deg, #8CB0CA, #455764)"
-            :background-transparency="isHomeActive ? 12 : 40"
-            text-color="#d9d9d9" width="90" height="5" icon="/src/assets/icons/casa.svg" icon-side="left" icon-size="18"
-            icon-gap="8" />
+        <TextButton class="HomeButton" text="Início" @click="onHomeClick"
+            :aria-current="isHomeActive ? 'page' : undefined" ideal-text-size="20" max-text-size="20"
+            border-radius="100" :stroke="isHomeActive ? 1 : 0" stroke-color="#8CB0CA"
+            background-color="linear-gradient(90deg, #8CB0CA, #455764)"
+            :background-transparency="isHomeActive ? 12 : 40" text-color="#d9d9d9" width="90" height="5"
+            icon="/src/assets/icons/casa.svg" icon-side="left" icon-size="18" icon-gap="8" />
 
-        <TextButton class="GalleryButton" text="Galeria" ideal-text-size="20" max-text-size="20" border-radius="100"
-            stroke="0" background-color="linear-gradient(90deg, #8CB0CA, #455764)" background-transparency="40"
-            text-color="#d9d9d9" width="90" height="5" icon="/src/assets/icons/paisagem.svg" icon-side="left"
-            icon-size="18" icon-gap="8" />
+        <TextButton class="GalleryButton" text="Galeria" @click="onGalleryClick"
+            :aria-current="isGalleryActive ? 'page' : undefined" ideal-text-size="20" max-text-size="20"
+            border-radius="100" :stroke="isGalleryActive ? 1 : 0" stroke-color="#8CB0CA"
+            background-color="linear-gradient(90deg, #8CB0CA, #455764)"
+            :background-transparency="isGalleryActive ? 12 : 40" text-color="#d9d9d9" width="90" height="5"
+            icon="/src/assets/icons/paisagem.svg" icon-side="left" icon-size="18" icon-gap="8" />
 
         <TextButton class="SettingsButton" text="Configurações" @click="onSettingsClick"
             :aria-current="isSettingsActive ? 'page' : undefined" ideal-text-size="20" max-text-size="20"
@@ -60,15 +62,12 @@ const {
             :background-transparency="isSettingsActive ? 12 : 40" text-color="#d9d9d9" width="90" height="5"
             icon="/src/assets/icons/configuracoes.svg" icon-side="left" icon-size="18" icon-gap="8" />
 
-        <button v-if="isAdministrator" type="button" class="administrator-button"
-            :class="{ 'is-active': isAdminActive }" :aria-current="isAdminActive ? 'page' : undefined"
-            @click="onAdminClick">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-                <ellipse cx="12" cy="5" rx="7" ry="3" />
-                <path d="M5 5v14c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" />
-            </svg>
-            <span>Interface do<br>Administrador</span>
-        </button>
+        <TextButton v-if="isAdministrator" class="AdminButton" :text="'Interface do\nAdministrador'"
+            @click="onAdminClick" :aria-current="isAdminActive ? 'page' : undefined" ideal-text-size="20"
+            max-text-size="20" min-text-size="20" border-radius="100" :stroke="isAdminActive ? 1 : 0"
+            stroke-color="#8CB0CA" background-color="linear-gradient(90deg, #8CB0CA, #455764)"
+            :background-transparency="isAdminActive ? 12 : 40" text-color="#d9d9d9" width="90" height="7"
+            icon="/src/assets/icons/admin.svg" icon-side="left" icon-size="20" icon-gap="8" text-wrapped="true" />
 
         <Frame class="SidebarFrame" background-color="" width="100" height="30" position-y-scale="85"
             position-x-scale="50" ignore-layout>
@@ -122,8 +121,23 @@ const {
     text-align: left;
 }
 
-.administrator-button svg { width: 17px; height: 20px; flex-shrink: 0; }
-.administrator-button:hover { background: linear-gradient(90deg, #8cb0cabb, #455764bb); }
-.administrator-button.is-active { border-color: #8cb0ca; background: linear-gradient(90deg, #8cb0cae0, #455764e0); }
-.administrator-button:focus-visible { outline: 2px solid #8cb0ca; outline-offset: 3px; }
+.administrator-button svg {
+    width: 17px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.administrator-button:hover {
+    background: linear-gradient(90deg, #8cb0cabb, #455764bb);
+}
+
+.administrator-button.is-active {
+    border-color: #8cb0ca;
+    background: linear-gradient(90deg, #8cb0cae0, #455764e0);
+}
+
+.administrator-button:focus-visible {
+    outline: 2px solid #8cb0ca;
+    outline-offset: 3px;
+}
 </style>

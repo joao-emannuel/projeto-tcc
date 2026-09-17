@@ -7,7 +7,7 @@ const { isOpen, novaSenha, confirmarSenha, errorMessage, successMessage, busy, d
 
 <template>
   <AppModal :open="isOpen" title="Escolha sua nova senha" :busy="busy"
-    description="Bem-vindo ao VisionFade! Você entrou com uma senha temporária. Se quiser, escolha uma nova senha para os próximos acessos."
+    description="Bem-vindo ao VisionFade! Você entrou com uma senha inicial. Se quiser, escolha uma nova senha para os próximos acessos."
     @close="dismiss">
     <form class="password-form" @submit.prevent="savePassword">
       <label for="first-login-password">Nova senha</label>
@@ -18,7 +18,7 @@ const { isOpen, novaSenha, confirmarSenha, errorMessage, successMessage, busy, d
         placeholder="Repita sua nova senha" minlength="8" required :disabled="busy" />
       <p v-if="errorMessage" class="password-error" role="alert">{{ errorMessage }}</p>
       <button type="submit" class="save-password" :disabled="busy">{{ busy ? 'Salvando…' : 'Salvar nova senha' }}</button>
-      <button type="button" class="skip-password" :disabled="busy" @click="dismiss">Continuar com a senha temporária</button>
+      <button type="button" class="skip-password" :disabled="busy" @click="dismiss">Continuar com a senha inicial</button>
     </form>
   </AppModal>
   <p v-if="successMessage" class="password-success" role="status">{{ successMessage }}</p>

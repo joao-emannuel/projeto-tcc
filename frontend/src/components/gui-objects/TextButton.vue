@@ -7,6 +7,7 @@ const props = defineProps({
     textMargin: { type: [String, Number], default: 10 },
     textColor: { type: String, default: '#ffffff' },
     textSide: { type: String, default: 'center' },
+    textWrapped: { type: Boolean, default: false },
     stroke: { type: [String, Number], default: 1 },
     strokeColor: { type: String, default: '#ffffff' },
     backgroundColor: { type: String, default: '#404040' },
@@ -116,7 +117,11 @@ const textStyle = computed(() => ({
     fontFamily: `${props.textFont}, Arial, sans-serif`,
     fontWeight: fontWeight.value,
     fontStyle: fontStyle.value,
-    whiteSpace: 'nowrap',
+    whiteSpace: props.textWrapped ? 'pre-line' : 'nowrap',
+    textAlign: props.textWrapped ? 'center' : undefined,
+    lineHeight: props.textWrapped ? 1.25 : undefined,
+    width: props.textWrapped ? 'max-content' : undefined,
+    maxWidth: props.textWrapped ? '100%' : undefined,
 }))
 
 const iconStyle = computed(() => ({

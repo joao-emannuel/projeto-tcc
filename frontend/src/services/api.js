@@ -49,6 +49,10 @@ export async function apiRequest(path, {
   if (!response.ok) {
     const error = new Error(data?.erro || fallbackMessage)
     error.status = response.status
+    if (Number.isFinite(data?.retryAfterSeconds)) error.retryAfterSeconds = data.retryAfterSeconds
+    if (typeof data?.reenviarEm === 'string') error.reenviarEm = data.reenviarEm
+    if (typeof data?.codigoBloqueado === 'boolean') error.codigoBloqueado = data.codigoBloqueado
+    if (Number.isInteger(data?.tentativasRestantes)) error.tentativasRestantes = data.tentativasRestantes
     throw error
   }
 

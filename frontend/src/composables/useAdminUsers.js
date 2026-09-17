@@ -21,10 +21,18 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
   const form = reactive(emptyUser())
   const pendingRegistration = ref(null)
   const code = ref('')
-  const resendSeconds = ref(0)
+  const cooldowns = reactive(new Map())
+  const clock = ref(Date.now())
+  const verificationBlocked = ref(false)
+  const attemptsRemaining = ref(null)
   const editing = ref(null)
   const confirmation = ref(null)
   let resendTimer
+
+  const emailKey = email => String(email || '').trim().toLowerCase()
+  const cooldownSeconds = email => Math.max(0, Math.ceil(((cooldowns.get(emailKey(email)) || 0) - clock.value) / 1000))
+  const createSeconds = computed(() => cooldownSeconds(form.email))
+  const resendSeconds = computed(() => cooldownSeconds(pendingRegistration.value?.email))
 
   const filteredUsers = computed(() => {
     const term = normalize(search.value.trim())
@@ -64,17 +72,26 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
     finally { loading.value = false }
   }
 
-  function startResendCooldown() {
+  function startResendCooldown(email, metadata = {}, fallbackSeconds = 0) {
+    const now = Date.now()
+    const date = Date.parse(metadata.reenviarEm)
+    const seconds = Number(metadata.retryAfterSeconds) || (Number.isFinite(date) ? 0 : fallbackSeconds)
+    const until = Math.max(Number.isFinite(date) ? date : 0, seconds > 0 ? now + seconds * 1000 : 0)
+    if (until <= now) return
+    cooldowns.set(emailKey(email), Math.max(cooldowns.get(emailKey(email)) || 0, until))
+    clock.value = now
     clearInterval(resendTimer)
-    resendSeconds.value = 30
     resendTimer = setInterval(() => {
-      resendSeconds.value = Math.max(0, resendSeconds.value - 1)
-      if (!resendSeconds.value) clearInterval(resendTimer)
+      clock.value = Date.now()
+      for (const [key, deadline] of cooldowns) {
+        if (deadline <= clock.value) cooldowns.delete(key)
+      }
+      if (!cooldowns.size) clearInterval(resendTimer)
     }, 1000)
   }
 
   async function createAccount() {
-    if (busy.value || accessDenied.value) return
+    if (busy.value || accessDenied.value || createSeconds.value) return
     busy.value = true
     formError.value = ''
     success.value = ''
@@ -85,8 +102,13 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
       })
       code.value = ''
       modalError.value = ''
-      startResendCooldown()
-    } catch (cause) { captureError(cause, formError) }
+      verificationBlocked.value = false
+      attemptsRemaining.value = null
+      startResendCooldown(pendingRegistration.value.email, pendingRegistration.value, 30)
+    } catch (cause) {
+      captureError(cause, formError)
+      startResendCooldown(form.email, cause)
+    }
     finally { busy.value = false }
   }
 
@@ -95,7 +117,8 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
     pendingRegistration.value = null
     code.value = ''
     modalError.value = ''
-    clearInterval(resendTimer)
+    verificationBlocked.value = false
+    attemptsRemaining.value = null
   }
 
   async function resendCode() {
@@ -105,13 +128,18 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
     try {
       pendingRegistration.value = await api.resendCode(pendingRegistration.value.cadastroId)
       code.value = ''
-      startResendCooldown()
-    } catch (cause) { captureError(cause, modalError) }
+      verificationBlocked.value = false
+      attemptsRemaining.value = null
+      startResendCooldown(pendingRegistration.value.email, pendingRegistration.value, 30)
+    } catch (cause) {
+      captureError(cause, modalError)
+      startResendCooldown(pendingRegistration.value.email, cause)
+    }
     finally { busy.value = false }
   }
 
   async function verifyCode() {
-    if (busy.value || !pendingRegistration.value || accessDenied.value) return
+    if (busy.value || !pendingRegistration.value || accessDenied.value || verificationBlocked.value) return
     modalError.value = ''
     const value = code.value.trim()
     if (!/^\d{6}$/.test(value)) {
@@ -123,11 +151,14 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
       const { usuario } = await api.confirmRegistration(pendingRegistration.value.cadastroId, value)
       updateListedUser(usuario)
       pendingRegistration.value = null
-      clearInterval(resendTimer)
       Object.assign(form, emptyUser())
       code.value = ''
-      success.value = `Conta de ${usuario.apelido || usuario.nome} criada. O usuário já pode entrar com a senha temporária recebida por e-mail.`
-    } catch (cause) { captureError(cause, modalError) }
+      success.value = `Conta de ${usuario.apelido || usuario.nome} criada. O usuário já pode entrar com a senha inicial recebida por e-mail.`
+    } catch (cause) {
+      captureError(cause, modalError)
+      if (cause.codigoBloqueado) verificationBlocked.value = true
+      if (Number.isInteger(cause.tentativasRestantes)) attemptsRemaining.value = cause.tentativasRestantes
+    }
     finally { busy.value = false }
   }
 
@@ -160,9 +191,9 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
     finally { busy.value = false }
   }
 
-  function askConfirmation(type, user) {
-    if (busy.value || accessDenied.value || (type === 'status' && isSelf(user))) return
-    confirmation.value = { type, user }
+  function askConfirmation(user) {
+    if (busy.value || accessDenied.value || isSelf(user)) return
+    confirmation.value = { user }
     modalError.value = ''
   }
 
@@ -172,19 +203,14 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
 
   async function confirmAction() {
     if (busy.value || !confirmation.value || accessDenied.value) return
-    const { type, user } = confirmation.value
-    if (type === 'status' && isSelf(user)) return
+    const { user } = confirmation.value
+    if (isSelf(user)) return
     busy.value = true
     modalError.value = ''
     try {
-      if (type === 'status') {
-        const { usuario } = await api.update(user.id, { ativo: !user.ativo })
-        updateListedUser(usuario)
-        success.value = usuario.ativo ? 'Usuário reativado.' : 'Usuário desativado. Seus dados foram preservados.'
-      } else {
-        const response = await api.recoverPassword(user.id)
-        success.value = response.mensagem || 'E-mail de recuperação de senha enviado.'
-      }
+      const { usuario } = await api.update(user.id, { ativo: !user.ativo })
+      updateListedUser(usuario)
+      success.value = usuario.ativo ? 'Usuário reativado.' : 'Usuário desativado. Seus dados foram preservados.'
       confirmation.value = null
     } catch (cause) { captureError(cause, modalError) }
     finally { busy.value = false }
@@ -196,7 +222,7 @@ export default function useAdminUsers({ api = adminUsersApi, currentUser = getSe
   return {
     users, search, statusFilter, roleFilter, filteredUsers, totalActive, totalAdmins, isSelf,
     loading, busy, error, formError, modalError, success, accessDenied, form, pendingRegistration,
-    code, resendSeconds, editing, confirmation, loadUsers, createAccount, closeVerification,
+    code, resendSeconds, createSeconds, verificationBlocked, attemptsRemaining, editing, confirmation, loadUsers, createAccount, closeVerification,
     resendCode, verifyCode, openEdit, closeEdit, saveUser, askConfirmation, closeConfirmation, confirmAction,
   }
 }

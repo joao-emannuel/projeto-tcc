@@ -1,6 +1,3 @@
-/* Fontes disponíveis em text-font: Arial (do sistema) e Inter (incluída no projeto).
-   Exemplo: <TextLabel text-font="Inter" text-style="bold" /> */
-
 @font-face {
   font-family: 'Inter';
   font-style: normal;

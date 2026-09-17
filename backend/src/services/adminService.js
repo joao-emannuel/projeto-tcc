@@ -3,10 +3,9 @@ import bcrypt from 'bcrypt'
 import {
   adminTransaction, checkUserConflict, insertPending, getPending, updatePendingCredentials,
   createConfirmedUser, getUserForEdit, countActiveAdmins, updateUser,
+  incrementIncorrectAttempts, getRecentRegistrationSends, recordRegistrationSend,
 } from '../repositories/adminRepository.js'
-import { findUserById } from '../repositories/usersRepository.js'
 import { sendRegistrationEmail } from './emailService.js'
-import { requestPasswordReset } from './passwordResetService.js'
 import { isAdmin, publicUser } from './sessionService.js'
 import { ServiceError } from './serviceError.js'
 
@@ -45,17 +44,53 @@ function hashCode(code) {
 
 async function newCredentials() {
   const codigo = String(crypto.randomInt(0, 1000000)).padStart(6, '0')
-  const senhaTemporaria = crypto.randomBytes(12).toString('base64url')
+  const senhaInicial = crypto.randomBytes(12).toString('base64url')
   return {
-    codigo, senhaTemporaria,
-    senha_hash: await bcrypt.hash(senhaTemporaria, 10),
+    codigo, senhaInicial,
+    senha_hash: await bcrypt.hash(senhaInicial, 10),
     codigo_hash: hashCode(codigo),
     expira_em: new Date(Date.now() + 30 * 60 * 1000),
   }
 }
 
-function pendingResponse(cadastro) {
-  return { cadastroId: cadastro.id, email: cadastro.email, expiraEm: cadastro.expira_em }
+const resendInterval = 30 * 1000
+const sendWindow = 60 * 60 * 1000
+const maxSends = 5
+const maxIncorrectAttempts = 5
+
+function nextSendAt(sends) {
+  return Math.max((sends.at(-1) ?? 0) + resendInterval, sends.length >= maxSends ? sends[0] + sendWindow : 0)
+}
+
+async function checkSendLimit(client, cadastro) {
+  const now = Date.now()
+  const sends = await getRecentRegistrationSends(client, cadastro.administrador_id, cadastro.email, new Date(now - sendWindow))
+  const availableAt = nextSendAt(sends)
+  if (sends.length && availableAt > now) {
+    throw Object.assign(new ServiceError(
+      sends.length >= maxSends
+        ? 'Limite de 5 envios por hora para este e-mail atingido. Aguarde para enviar novamente.'
+        : 'Aguarde 30 segundos entre os envios de verificação para este e-mail.',
+      429
+    ), { retryAfterSeconds: Math.ceil((availableAt - now) / 1000), reenviarEm: new Date(availableAt).toISOString() })
+  }
+  return sends
+}
+
+async function sendVerification(client, cadastro, sends) {
+  await sendRegistrationEmail(cadastro)
+  const sentAt = new Date(Date.now())
+  await recordRegistrationSend(client, cadastro, sentAt)
+  return {
+    cadastroId: cadastro.id, email: cadastro.email, expiraEm: cadastro.expira_em,
+    reenviarEm: new Date(nextSendAt([...sends, sentAt.getTime()])).toISOString(),
+  }
+}
+
+function blockedCodeError() {
+  return Object.assign(new ServiceError('Limite de 5 tentativas atingido. Reenvie a verificação para receber um novo código.', 429), {
+    codigoBloqueado: true, tentativasRestantes: 0,
+  })
 }
 
 export async function beginRegistration(admin, body = {}) {
@@ -66,9 +101,9 @@ export async function beginRegistration(admin, body = {}) {
   const cadastro = { ...input, ...credentials, email, id: crypto.randomUUID(), administrador_id: admin.id }
   return adminTransaction(async client => {
     await checkUserConflict(client, cadastro)
+    const sends = await checkSendLimit(client, cadastro)
     await insertPending(client, cadastro)
-    await sendRegistrationEmail(cadastro)
-    return pendingResponse(cadastro)
+    return sendVerification(client, cadastro, sends)
   })
 }
 
@@ -76,26 +111,36 @@ export async function resendRegistration(admin, id) {
   pendingId(id)
   return adminTransaction(async client => {
     const previous = await getPending(client, id, admin.id)
+    const sends = await checkSendLimit(client, previous)
     let credentials = await newCredentials()
     while (credentials.codigo_hash === previous.codigo_hash) credentials = await newCredentials()
     const cadastro = { ...previous, ...credentials }
     await checkUserConflict(client, cadastro)
     await updatePendingCredentials(client, cadastro)
-    await sendRegistrationEmail(cadastro)
-    return pendingResponse(cadastro)
+    return sendVerification(client, cadastro, sends)
   })
 }
 
 export async function confirmRegistration(admin, id, { codigo } = {}) {
   pendingId(id)
   if (typeof codigo !== 'string' || !/^\d{6}$/.test(codigo.trim())) throw new ServiceError('Informe o código de 6 dígitos.', 400)
-  return adminTransaction(async client => {
+  const result = await adminTransaction(async client => {
     const cadastro = await getPending(client, id, admin.id)
+    if (cadastro.tentativas_incorretas >= maxIncorrectAttempts) throw blockedCodeError()
     if (new Date(cadastro.expira_em).getTime() <= Date.now()) throw new ServiceError('Código expirado. Reenvie a verificação.', 400)
-    if (hashCode(codigo.trim()) !== cadastro.codigo_hash) throw new ServiceError('Código incorreto. Confira o código recebido por e-mail.', 400)
+    if (hashCode(codigo.trim()) !== cadastro.codigo_hash) {
+      const attempts = await incrementIncorrectAttempts(client, id)
+      // Retorna o erro para confirmar o contador antes de responder à requisição.
+      return { error: attempts >= maxIncorrectAttempts ? blockedCodeError() : Object.assign(
+        new ServiceError('Código incorreto. Confira o código recebido por e-mail.', 400),
+        { tentativasRestantes: maxIncorrectAttempts - attempts }
+      ) }
+    }
     await checkUserConflict(client, cadastro)
     return { usuario: publicUser(await createConfirmedUser(client, cadastro)) }
   })
+  if (result.error) throw result.error
+  return result
 }
 
 export async function editUser(admin, id, body = {}) {
@@ -115,12 +160,4 @@ export async function editUser(admin, id, body = {}) {
     await checkUserConflict(client, { ...input, email: current.email, exceptId: id })
     return { usuario: publicUser(await updateUser(client, id, { ...input, ativo })) }
   })
-}
-
-export async function sendUserPasswordReset(id) {
-  const usuario = await findUserById(userId(id))
-  if (!usuario) throw new ServiceError('Usuário não encontrado.', 404)
-  if (!usuario.ativo) throw new ServiceError('Reative o usuário antes de enviar a recuperação de senha.', 400)
-  await requestPasswordReset({ email: usuario.email })
-  return { mensagem: 'Instruções para redefinir a senha enviadas ao e-mail do usuário.' }
 }

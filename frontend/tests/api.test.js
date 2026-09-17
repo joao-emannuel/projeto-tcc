@@ -68,3 +68,22 @@ test('aceita uma resposta sem conteúdo', async (context) => {
 
   assert.equal(await apiRequest('/exemplo'), null)
 })
+
+test('preserva informações de espera e bloqueio de códigos enviadas pelo servidor', async context => {
+  context.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({
+    erro: 'Código bloqueado.',
+    retryAfterSeconds: 90,
+    reenviarEm: '2030-01-01T12:30:00Z',
+    codigoBloqueado: true,
+    tentativasRestantes: 0,
+  }), { status: 429 }))
+
+  await assert.rejects(apiRequest('/admin/cadastros/teste/confirmar'), {
+    message: 'Código bloqueado.',
+    status: 429,
+    retryAfterSeconds: 90,
+    reenviarEm: '2030-01-01T12:30:00Z',
+    codigoBloqueado: true,
+    tentativasRestantes: 0,
+  })
+})

@@ -10,6 +10,7 @@ export default function useSidebar() {
   const route = useRoute()
 
   const isHomeActive = computed(() => route.name === 'home')
+  const isGalleryActive = computed(() => route.name === 'galeria')
   const isSettingsActive = computed(() => route.name === 'configuracoes')
   const isAdminActive = computed(() => route.name === 'administrador')
   const isAdministrator = computed(() => isAdminUser(sessionUser.value))
@@ -29,6 +30,10 @@ export default function useSidebar() {
 
   function onSettingsClick() {
     return navigateTo('configuracoes')
+  }
+
+  function onGalleryClick() {
+    return navigateTo('galeria')
   }
 
   function onAdminClick() {
@@ -65,7 +70,7 @@ export default function useSidebar() {
 
   return {
     isOpen, onToggleSidebarClick, estaLogado, apelidoExibido, textoBoasVindas, onLogoutClick,
-    isHomeActive, isSettingsActive, onHomeClick, onSettingsClick,
+    isHomeActive, isSettingsActive, onHomeClick, onSettingsClick, isGalleryActive, onGalleryClick,
     isAdminActive, isAdministrator, onAdminClick,
   }
 }

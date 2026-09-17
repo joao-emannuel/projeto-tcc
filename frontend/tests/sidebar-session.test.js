@@ -11,6 +11,8 @@ async function mountSidebar(context) {
   const router = createRouter({ history: createMemoryHistory(), routes: [
     { path: '/', name: 'login', component },
     { path: '/inicio', name: 'home', component },
+    { path: '/galeria', name: 'galeria', component },
+    { path: '/customizar', name: 'customizar', component },
   ] })
   const renderer = createRenderer({ createComment: () => ({}), insert() {}, remove() {}, parentNode: () => null, nextSibling: () => null })
   let sidebar
@@ -43,4 +45,25 @@ test('logout atrasado da sessão anterior não encerra o login novo', async cont
   assert.equal(getSessionToken(), 'new-session')
   assert.equal(router.currentRoute.value.name, 'home')
   assert.equal(sidebar.isAdministrator.value, false)
+})
+
+test('botão Galeria navega e marca a rota ativa no sidebar', async context => {
+  const { sidebar, router } = await mountSidebar(context)
+  assert.equal(sidebar.isGalleryActive.value, false)
+  await sidebar.onGalleryClick()
+  assert.equal(router.currentRoute.value.name, 'galeria')
+  assert.equal(sidebar.isGalleryActive.value, true)
+  assert.equal(sidebar.isHomeActive.value, false)
+  const push = context.mock.method(router, 'push')
+  await sidebar.onGalleryClick()
+  assert.equal(push.mock.callCount(), 0)
+})
+
+test('abrir Galeria ao sair de customizar substitui a etapa no histórico', async context => {
+  const { sidebar, router } = await mountSidebar(context)
+  await router.push({ name: 'customizar' })
+  const replace = context.mock.method(router, 'replace')
+  await sidebar.onGalleryClick()
+  assert.equal(replace.mock.callCount(), 1)
+  assert.equal(router.currentRoute.value.name, 'galeria')
 })

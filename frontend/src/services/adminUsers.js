@@ -14,7 +14,4 @@ export const adminUsersApi = {
   update: (id, body) => apiRequest(`/admin/usuarios/${id}`, {
     method: 'PATCH', body, fallbackMessage: 'Não foi possível salvar as alterações.',
   }),
-  recoverPassword: id => apiRequest(`/admin/usuarios/${id}/recuperar-senha`, {
-    method: 'POST', fallbackMessage: 'Não foi possível enviar a recuperação de senha.',
-  }),
 }
